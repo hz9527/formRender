@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "module": "ESNext",
+    "target": "es6",
+    "removeComments": true,
+    "sourceMap": true,
+    "noImplicitAny": false,
+    "allowJs": true,
+    "experimentalDecorators": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "node",
+    "lib": [
+      "es6"
+    ],
+    "typeRoots": [
+      "./node_modules/@types",
+    ]
+  },
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build"
+  ],
+  "include": [
+    "src"
+  ]
+}
+
