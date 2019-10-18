@@ -34,7 +34,6 @@ class FormRender<Fields> {
     return [
       new FormItem(),
       new FormItem(),
-      new FormItem(),
     ]
   }
 

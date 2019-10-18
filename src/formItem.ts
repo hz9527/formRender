@@ -51,7 +51,8 @@ export abstract class ItemRender<F extends Fields, I extends Item> {
           ...item,
           children: this.children.map(
             (item): I => item.runRender(newFeilds, setFields, getFields, middleware)
-          ).filter((item): boolean => !!item)
+          )
+          // filter((item): boolean => !!item)
         }
       } else {
         this.cache = item

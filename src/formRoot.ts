@@ -85,6 +85,7 @@ export default abstract class FormRender<F, I extends FormItem> {
     const result = this.children.map((component): I =>
       component.runRender(this.fields, this.setFields, this.getFields, this.middlewares.item)
     )
+    // filter
     this.isPending = false
     return result
   }
