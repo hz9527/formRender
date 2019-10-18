@@ -31,13 +31,16 @@ export default abstract class FormRender<F, I extends FormItem> {
     this.children.forEach((component): void => {
       component.init(this.middlewares.component)
     })
-    const effect = this.effect
     let result: I[]
-    this.effect = (items): void => {
-      result = items
-    }
     result = this.runRender()
-    this.effect = effect
+    if (this.tasks.length) {
+      const effect = this.effect
+      this.effect = (items): void => {
+        result = items
+      }
+      this.clearTask()
+      this.effect = effect
+    }
     return result
   }
 
@@ -53,9 +56,7 @@ export default abstract class FormRender<F, I extends FormItem> {
     if (this.tasks.length === 0) {
       this.effect(children)
     } else {
-      const data = this.tasks.reduce((data, item): PartFields<F> => ({ ...data, ...item }), {})
-      this.tasks.length = 0
-      this.setFields(data)
+      this.clearTask()
     }
   }
 
@@ -71,6 +72,12 @@ export default abstract class FormRender<F, I extends FormItem> {
     }
     walk(this.children, handler)
     return result
+  }
+
+  private clearTask (): void {
+    const data = this.tasks.reduce((data, item): PartFields<F> => ({ ...data, ...item }), {})
+    this.tasks.length = 0
+    this.setFields(data)
   }
 
   private runRender (): I[] {

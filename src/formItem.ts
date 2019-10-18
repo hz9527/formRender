@@ -12,13 +12,16 @@ export abstract class ItemRender<F extends Fields, I extends Item> {
 
   init (middleware: Middleware<ItemRender<F, I>[], Function>): void {
     const children = this.getChildren()
-    this.children = middleware.run(children, this.constructor, this)
-    for (let i = 0, l = this.children.length; i < l; i++) {
-      const child = this.children[i]
-      const forceUpdate = child.forceUpdate
-      child.forceUpdate = (setFields: SetFields<F>, newFields?: PartFields<F>): void => {
-        this.isForce = true
-        forceUpdate.call(child, setFields, newFields)
+    if (children && children.length) {
+      this.children = middleware.run(children, this.constructor, this)
+      for (let i = 0, l = this.children.length; i < l; i++) {
+        const child = this.children[i]
+        const forceUpdate = child.forceUpdate
+        child.forceUpdate = (setFields: SetFields<F>, newFields?: PartFields<F>): void => {
+          this.isForce = true
+          forceUpdate.call(child, setFields, newFields)
+        }
+        child.init(middleware)
       }
     }
   }
@@ -42,7 +45,7 @@ export abstract class ItemRender<F extends Fields, I extends Item> {
     if (this.shouldUpdate(newFeilds) || this.cache || this.isForce) {
       this.isForce = false
       let item = this.render(setFields, getFields)
-      item = middleware.run(item, item && item.formId || null, this)
+      item = middleware.run(item, (item && item.formId) || null, this)
       if (item.children) {
         this.cache = {
           ...item,

@@ -24,4 +24,39 @@ UI = render(fields)
 }
 ```
 
-## Class
+### class
+
+```js
+class FormRender<Fields> {
+  fields: Fields
+
+  render(): FormItem[] {
+    return [
+      new FormItem(),
+      new FormItem(),
+      new FormItem(),
+    ]
+  }
+
+  setFields(partOfFields: {[S in keyof Fields]?: Fields[P]}): void {}
+
+  getFields(): Fields {}
+}
+
+class FormItem {
+  render(fields, setFields, getFields): Item {}
+
+  getChildren(): FormItem[] {}
+}
+
+// Item 即表单描述，如：
+type FormType = 'select' | 'input' | 'date'
+interface Item {
+  title: string;
+  desc: string;
+  required: boolean;
+  type: FormType;
+  value: Fields[keyof Fields];
+  onChange(value): void {}
+}
+```
