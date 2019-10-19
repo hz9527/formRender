@@ -2,10 +2,19 @@
 
 > 业务上遇到一个持续需求，每个需求即一个表单页面。表单 UI 符合一套设计规范，规划上表单还可能做移动端支持
 
-以上背景要求：
+分析：
 
-1. 由于表单对比传统展示逻辑，移动端和 PC 逻辑可能完全不同，因此需要逻辑服用，UI 层只读逻辑层
-2. 对于每一端，UI 复用性很高，每个表单页完全没有必要去拼装 UI 组件，而是一套逻辑的 DSL
+1. 表单的 UI 自适应和传统只读数据完全不同，如 选项列表，在 pc 上是 select，在移动端是 picker。
+2. 传统只读数据，迁移逻辑类似 ssr，将所有数据放在 store，完成 store 维护即可。
+3. 表单 UI 层逻辑较为单一，如 输入框、下拉框基本长得一样
+
+结论：
+
+> 移动端和 PC 展示逻辑可能完全不同，因此需要表单逻辑复用，UI 层只读逻辑层。通过一个抽象中间层来实现表单逻辑，通过 Store 连接到 UI。
+
+流程如下：
+
+表单描述 -》 store -》 MVVM -》onChange(setFeilds,循环上述过程)
 
 ## 设计
 
@@ -28,6 +37,9 @@ UI = render(fields)
 
 ```js
 class FormRender<Fields> {
+
+  effect: (items: Item[]) => void; // dispatch
+
   fields: Fields
 
   render(): FormItem[] {
@@ -56,6 +68,126 @@ interface Item {
   required: boolean;
   type: FormType;
   value: Fields[keyof Fields];
-  onChange(value): void {}
+  onChange(value): void {}; // setFields
 }
 ```
+
+## 优点
+
+1. 可迁移。将表单逻辑和 UI 逻辑分离，pc、移动端基本只需要实现各自表单的 UI，交互逻辑由 render 维护
+2. 声明式编程体验。单个输入框逻辑解耦，只读 fields 即可，当表单字段耦合较多时你会发现解除这种声明式编程带来的好处
+3. PureItemRender 配合 React shouldUpdate / PureComponent 做到最细化 diff，性能兜底
+4. 一个项目多个表单，各个表单独立维护，复用 UI 层，提升开发效率及体验
+
+## quick start
+
+```js
+// 比如每次选择开始时间，结束时间自动后推半小时
+class StartTime exnteds PureItemRender {
+  render(fields, setFields, getFields) {
+    return {
+      formId: 'start',
+      type: 'select',
+      value: fields.start,
+      options: list // 下拉选项
+      onChange(value) {
+        setFields({start: value, end: value + 1})
+      }
+    }
+  }
+}
+class EndTime exnteds PureItemRender {
+  render(fields, setFields, getFields) {
+    return {
+      formId: 'end',
+      type: 'select',
+      value: fields.end,
+      options: list // 下拉选项
+      onChange(value) {
+        setFields({end: value})
+      }
+    }
+  }
+}
+class Form extends FormRender {
+  render() {
+    return [
+      new StartTime(['start']),
+      new EndTime(['end'])
+    ]
+  }
+}
+
+// 比如下拉选项是异步拉取的
+class Select extends PureItemRender {
+  options = null;
+  render(fields, setFields, getFields) {
+    if (!this.options) {
+      getOptions()
+        .then(data => {
+          this.options = data;
+          this.forceUpdate(setFields)
+        })
+    }
+    return {
+      formId: 'end',
+      type: 'select',
+      value: fields.select,
+      options: this.options // 下拉选项
+      loading: !this.options,
+      onChange(value) {
+        setFields({select: value})
+      }
+    }
+  }
+}
+
+// 比如下拉选项只有开关打开才展示
+class Select exnteds PureItemRender {
+  render(fields, setFields, getFields) {
+    return fields.switch ? {
+      formId: 'select',
+      type: 'select',
+      value: fields.select,
+      options: list // 下拉选项
+      onChange(value) {
+        setFields({select: value})
+      }
+    } : null;
+  }
+}
+class Form extends FormRender {
+  render() {
+    return [
+      new Switch(['switch]),
+      new Select(['select', 'switch]),
+    ]
+  }
+}
+```
+
+## Api
+
+### FormRender
+
+#### FormRender.constructor
+
+#### FormRender.prototype.render
+
+#### FormRender.prototype.init
+
+#### FormRender.middlewares
+
+#### FormRender.prototype.getFields
+
+#### FormRender.setFields
+
+### PureItemRender
+
+#### PureItemRender.constructor
+
+#### PureItemRender.prototype.render
+
+#### PureItemRender.prototype.forceUpdate
+
+#### PureItemRender.prototype.render
