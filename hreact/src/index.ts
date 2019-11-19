@@ -1,7 +1,9 @@
+/* eslint-disable no-void */
+type Ele = Text | Element;
 interface Props<S> {
   init: S;
   view: (state: S) => VNode | string;
-  node: Element
+  node: Ele;
 }
 interface Action<S> extends Function {
   (state: S, ...args: any[]): S;
@@ -13,64 +15,66 @@ interface Dispatch<S> {
 
 interface VNode {
   name: string; // tagName / textValue
-  props: {[k: string]: any}
+  props: {[k: string]: any};
   children: VNode[];
-  node: Element;
+  node: Ele;
   type: number;
   key: any;
 }
-
-type Element = Text | HTMLElement;
 
 const EMPTY_OBJ = {}
 const EMPTY_ARR = []
 const NODE_TYPE = 1
 const TEXT_NODE = 3
 
-function createVNode(name, props, children, node, type, key): VNode {
-  return {name, props, children, node, type, key}
+function createVNode (name, props, children, node, type, key): VNode {
+  return { name, props, children, node, type, key }
 }
 
-function createTextVNode(text: string, node: Element): VNode {
+function createTextVNode (text: string, node: Ele): VNode {
   return createVNode(text, EMPTY_OBJ, EMPTY_ARR, node, TEXT_NODE, void 0)
 }
 
-function recycleVNode(node: Element) {
+function recycleVNode (node: Ele) {
   return node.nodeType === TEXT_NODE
     ? createTextVNode(node.nodeValue, node)
     : createVNode(
       node.nodeName.toLowerCase(),
       EMPTY_OBJ,
-      Array.from(node.children).map(n => recycleVNode(n)),
+      Array.from((node as Element).children).map(n => recycleVNode(n)),
       node,
       NODE_TYPE,
-      void 0,
+      void 0
     )
 }
 
-function getVNode(vnode: VNode | string): VNode {
+function getVNode (vnode: VNode | string): VNode {
   return typeof vnode === 'object' ? vnode : createTextVNode(vnode, null)
 }
 
-function updateChildren() {
+function patchProps
+
+function updateChildren () {
 
 }
 
-function createNode(nVdom: VNode, oVdom: VNode): Element {
-  const node = nVdom.type === TEXT_NODE ? document.createTextNode(nVdom.name) : document.createElement(nVdom.name);
+function createNode (nVdom: VNode, oVdom: VNode): Ele {
+  const node = nVdom.type === TEXT_NODE
+    ? document.createTextNode(nVdom.name)
+    : document.createElement(nVdom.name)
   // todo patchProps
   if (!oVdom) {
 
   } else {
     updateChildren()
   }
-  nVdom.node = node;
-  return node;
+  nVdom.node = node
+  return node
 }
 
-function patch(parent: Element, curNode: Element, oVdom: VNode, nVdom: VNode): Element {
+function patch (parent: Ele, curNode: Ele, oVdom: VNode, nVdom: VNode): Ele {
   if (oVdom === nVdom) {
-  } else if (oVdom && oVdom.type == TEXT_NODE && nVdom.type === TEXT_NODE) {
+  } else if (oVdom && oVdom.type === TEXT_NODE && nVdom.type === TEXT_NODE) {
     oVdom.name !== nVdom.name && (curNode.nodeValue = nVdom.name)
   } else if (!oVdom || oVdom.name !== nVdom.name) {
     // create
@@ -79,29 +83,29 @@ function patch(parent: Element, curNode: Element, oVdom: VNode, nVdom: VNode): E
     // todo updateProps
     updateChildren()
   }
-  nVdom.node = curNode;
-  return curNode;
+  nVdom.node = curNode
+  return curNode
 }
 
-export function app<S>({init, view, node}: Props<S>): void {
-  let state: S = {} as S;
-  let rootNode = node;
-  let vdom = node && recycleVNode(node);
+export function app<S> ({ init, view, node }: Props<S>): void {
+  let state: S = {} as S
+  let rootNode = node
+  let vdom = node && recycleVNode(node)
 
-  function setState(newState: S): any {
-    if (state !== newState) {
-      state = newState;
-      render();
-    }
-  }
-
-  function render(): void {
-    const old = vdom;
-    vdom = getVNode(view(state));
+  function render (): void {
+    const old = vdom
+    vdom = getVNode(view(state))
     rootNode = patch(rootNode.parentElement, rootNode, old, vdom)
   }
 
-  const dispatch: Dispatch<S> = function(action: Action<S> | S, prop?: any): void {
+  function setState (newState: S): any {
+    if (state !== newState) {
+      state = newState
+      render()
+    }
+  }
+
+  const dispatch: Dispatch<S> = function (action: Action<S> | S, prop?: any): void {
     typeof action === 'function' ? dispatch((action as Action<S>)(state, prop)) : setState(action)
   }
   dispatch(init)
